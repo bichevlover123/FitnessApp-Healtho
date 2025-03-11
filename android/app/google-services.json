@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "309213149023",
+    "project_id": "fitnessapp-ea982",
+    "storage_bucket": "fitnessapp-ea982.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:309213149023:android:8b03f78375e6a6bafa28ea",
+        "android_client_info": {
+          "package_name": "com.codeforany.healtho_gym"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC-Vml2gwPKFTlXK-V3NdWdZoRXImev5pY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:309213149023:android:c7a11d9092c012ebfa28ea",
+        "android_client_info": {
+          "package_name": "com.fitnessapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC-Vml2gwPKFTlXK-V3NdWdZoRXImev5pY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
