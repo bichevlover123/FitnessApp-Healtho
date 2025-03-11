@@ -3,230 +3,197 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:healtho_gym/common/color_extension.dart';
 import 'package:healtho_gym/common_widget/round_button.dart';
+import 'package:healtho_gym/screen/login/goal_screen.dart';
 import 'package:healtho_gym/screen/login/login_screen.dart';
 
-class SignUpScreen extends StatefulWidget {
-  const SignUpScreen({super.key});
+class NameScreen extends StatefulWidget {
+  const NameScreen({super.key});
 
   @override
-  State<SignUpScreen> createState() => _SignUpScreenState();
+  State<NameScreen> createState() => _NameScreenState();
 }
 
-class _SignUpScreenState extends State<SignUpScreen> {
+class _NameScreenState extends State<NameScreen> {
+  final TextEditingController _nameController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  bool _obscurePassword = true;
-  bool _isLoading = false;
-  bool _signUpSuccessful = false;
-
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  String _selectedGender = ""; // Holds the selected gender ("Male" or "Female")
 
-  Future<void> _signUp() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() => _isLoading = true);
-
-    try {
-      // Create a new user.
-      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
-
-      // Save additional user information in Firestore.
-      await _firestore.collection('users').doc(userCredential.user!.uid).set({
-        'email': _emailController.text.trim(),
-        'createdAt': FieldValue.serverTimestamp(),
-        'lastLogin': FieldValue.serverTimestamp(),
-      });
-
-      // Send email verification if not already verified.
-      if (!userCredential.user!.emailVerified) {
-        await userCredential.user!.sendEmailVerification();
-      }
-
-      // Show success message via a snack bar (optional).
-      _showSuccessMessage(
-        'Sign up successful! Please verify your email.',
-      );
-
-      // Mark the sign-up as successful so that the success UI is shown.
-      setState(() {
-        _signUpSuccessful = true;
-      });
-    } on FirebaseAuthException catch (e) {
-      debugPrint('FirebaseAuthException: ${e.toString()}');
-      _showErrorMessage(e.message ?? 'Authentication failed');
-    } catch (e) {
-      debugPrint('Exception: ${e.toString()}');
-      _showErrorMessage('An error occurred. Please try again.');
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  void _showErrorMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-      ),
-    );
-  }
-
-  void _showSuccessMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green,
-      ),
-    );
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // If there's no logged-in user, show a message and redirect to LoginScreen.
+    if (_auth.currentUser == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please login to access this screen'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        );
+      });
+      return const Scaffold(body: SizedBox.shrink());
+    }
+
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 30),
+      body: SafeArea(
         child: Form(
           key: _formKey,
-          child: Column(
-            children: [
-              const Spacer(),
-              Image.asset(
-                "assets/img/app_logo.png",
-                width: MediaQuery.of(context).size.width * 0.7,
-              ),
-              const SizedBox(height: 40),
-              // Email Field
-              TextFormField(
-                controller: _emailController,
-                decoration: InputDecoration(
-                  labelText: 'Email',
-                  prefixIcon: Icon(Icons.email, color: TColor.primary),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(18),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 30),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 30),
+                Text(
+                  "Enter Your Name",
+                  style: TextStyle(
+                    color: TColor.primaryText,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
                   ),
-                ),
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your email';
-                  }
-                  if (!RegExp(r'^[\w.-]+@([\w-]+\.)+[\w-]{2,4}$')
-                      .hasMatch(value)) {
-                    return 'Please enter a valid email';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
-              // Password Field
-              TextFormField(
-                controller: _passwordController,
-                obscureText: _obscurePassword,
-                decoration: InputDecoration(
-                  labelText: 'Password',
-                  prefixIcon: Icon(Icons.lock, color: TColor.primary),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                      color: TColor.primary,
-                    ),
-                    onPressed: () =>
-                        setState(() => _obscurePassword = !_obscurePassword),
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your password';
-                  }
-                  if (value.length < 6) {
-                    return 'Password must be at least 6 characters';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 30),
-              // Conditional UI: either the Sign Up form or the success message with login link.
-              if (!_signUpSuccessful) ...[
-                _isLoading
-                    ? const CircularProgressIndicator()
-                    : RoundButton(
-                  title: 'Sign Up',
-                  type: RoundButtonType.primary,
-                  height: 50,
-                  fontSize: 14,
-                  radius: 25,
-                  fontWeight: FontWeight.w600,
-                  width: double.maxFinite,
-                  isPadding: true,
-                  onPressed: _signUp,
                 ),
                 const SizedBox(height: 20),
-                TextButton(
-                  onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const LoginScreen(),
-                      ),
-                    );
+                TextFormField(
+                  controller: _nameController,
+                  decoration: InputDecoration(
+                    hintText: "i.e. Code For Any",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your name';
+                    }
+                    return null;
                   },
-                  child: Text.rich(
-                    TextSpan(
-                      text: 'Already have an account? ',
-                      style: TextStyle(color: TColor.primaryText),
-                      children: [
-                        TextSpan(
-                          text: 'Log In',
-                          style: TextStyle(
-                            color: TColor.primary,
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  "Select Your Gender",
+                  style: TextStyle(
+                    color: TColor.primaryText,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            _selectedGender = "Male";
+                          });
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _selectedGender == "Male"
+                              ? TColor.primary
+                              : TColor.primary.withAlpha(153),
+                          minimumSize: const Size(0, 50), // Increased height
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          textStyle: const TextStyle(
+                            fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                ),
-              ] else ...[
-                // Display a green success message with a button to navigate to LoginScreen.
-                Text(
-                  'You have signed up successfully!\nPlease verify your email and then log in.',
-                  style: TextStyle(
-                    color: Colors.green,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 20),
-                RoundButton(
-                  title: 'Go to Login',
-                  type: RoundButtonType.primary,
-                  height: 50,
-                  fontSize: 14,
-                  radius: 25,
-                  fontWeight: FontWeight.w600,
-                  width: double.maxFinite,
-                  isPadding: true,
-                  onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const LoginScreen(),
+                        child: const Text(
+                          "Male",
+                          style: TextStyle(color: Colors.black),
+                        ),
                       ),
-                    );
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            _selectedGender = "Female";
+                          });
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _selectedGender == "Female"
+                              ? TColor.primary
+                              : TColor.primary.withAlpha(153),
+                          minimumSize: const Size(0, 50), // Increased height
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          textStyle: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        child: const Text(
+                          "Female",
+                          style: TextStyle(color: Colors.black),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 40),
+                // The button sends the entered name and selected gender to Firestore when pressed.
+                RoundButton(
+                  title: "NEXT",
+                  isPadding: false,
+                  onPressed: () async {
+                    if (_formKey.currentState!.validate()) {
+                      if (_selectedGender.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Please select your gender"),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+                      try {
+                        // Update the Firestore document for the current user with both the name and gender.
+                        await FirebaseFirestore.instance
+                            .collection('users')
+                            .doc(_auth.currentUser!.uid)
+                            .update({
+                          'name': _nameController.text,
+                          'gender': _selectedGender,
+                        });
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Failed to update details: $e'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+                      // Navigate to GoalScreen and pass the entered name.
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => GoalScreen(
+                            userName: _nameController.text,
+                          ),
+                        ),
+                      );
+                    }
                   },
                 ),
+                const Spacer(),
               ],
-              const Spacer(),
-            ],
+            ),
           ),
         ),
       ),

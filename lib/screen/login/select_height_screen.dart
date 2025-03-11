@@ -1,51 +1,49 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:healtho_gym/common/color_extension.dart';
-import 'package:healtho_gym/common_widget/radio_button.dart';
 
 class SelectHeightScreen extends StatefulWidget {
   final Function(dynamic) didChange;
-  const SelectHeightScreen({super.key, required this.didChange});
+  final int initialHeight;
+
+  const SelectHeightScreen({
+    Key? key,
+    required this.didChange,
+    this.initialHeight = 170,
+  }) : super(key: key);
 
   @override
   State<SelectHeightScreen> createState() => _SelectHeightScreenState();
 }
 
 class _SelectHeightScreenState extends State<SelectHeightScreen> {
-  List valueFtArr = [];
-  List valueInchArr = [];
-
-  int selectFt = 0;
-  int selectInch = 0;
+  List valueArr = [];
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
-
-    for (var i = 2; i < 11; i++) {
-      valueFtArr.add({"name": "$i Ft", "value": i});
-    }
-
-    for (var i = 0; i < 12; i++) {
-      valueInchArr.add({"name": "$i Inch", "value": i});
+    // Generate a list of heights from 100 cm to 250 cm.
+    for (var i = 100; i <= 250; i++) {
+      valueArr.add({"name": "$i", "value": i});
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Use MediaQuery for screen size info
+    final width = MediaQuery.of(context).size.width;
+    final height = MediaQuery.of(context).size.height;
+
     return Container(
-      width: context.width,
-      height: context.height,
+      width: width,
+      height: height,
       color: Colors.black45,
       alignment: Alignment.center,
       child: Container(
-        width: context.width * 0.6,
+        width: width * 0.6,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(
-            20,
-          ),
+          borderRadius: BorderRadius.circular(20),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
         child: Column(
@@ -53,62 +51,42 @@ class _SelectHeightScreenState extends State<SelectHeightScreen> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Text(
-              "Select your Height",
+              "Select your Height (cm)",
               style: TextStyle(
                 color: TColor.primaryText,
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(
-              height: 25,
-            ),
+            const SizedBox(height: 25),
             SizedBox(
               height: 200,
               child: Row(
                 children: [
                   Expanded(
                     child: CupertinoPicker(
+                      // Set the scroll controller's initialItem based on initialHeight.
+                      scrollController: FixedExtentScrollController(
+                        initialItem: widget.initialHeight - 100,
+                      ),
                       itemExtent: 32,
                       onSelectedItemChanged: (value) {
-                        selectFt = value;
-                        widget.didChange({
-                          "ft": valueFtArr[selectFt]["name"],
-                          "inch": valueInchArr[selectInch]["name"],
-                        });
+                        widget.didChange(valueArr[value]["name"]);
                       },
-                      children:
-                          List<Widget>.generate(valueFtArr.length, (index) {
-                        var obj = valueFtArr[index];
-
-                        return Text("${obj["name"]}");
-                      }),
-                    ),
-                  ),
-                  const SizedBox(
-                    width: 15,
-                  ),
-                  Expanded(
-                    child: CupertinoPicker(
-                      itemExtent: 32,
-                      onSelectedItemChanged: (value) {
-                        selectInch = value;
-                        widget.didChange({
-                          "ft": valueFtArr[selectFt]["name"],
-                          "inch": valueInchArr[selectInch]["name"],
-                        });
-                      },
-                      children:
-                          List<Widget>.generate(valueFtArr.length, (index) {
-                        var obj = valueInchArr[index];
-
-                        return Text("${obj["name"]}");
+                      children: List<Widget>.generate(valueArr.length, (index) {
+                        var obj = valueArr[index];
+                        return Center(
+                          child: Text(
+                            "${obj["name"]}",
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                        );
                       }),
                     ),
                   )
                 ],
               ),
-            )
+            ),
           ],
         ),
       ),

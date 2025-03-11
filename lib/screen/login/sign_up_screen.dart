@@ -23,47 +23,139 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  Future<void> _sendPasswordResetEmail(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email.trim());
+      _showSuccessMessage('Password reset email sent! Check your inbox.');
+    } on FirebaseAuthException catch (e) {
+      _showErrorMessage(e.message ?? 'Failed to send reset email');
+    } catch (e) {
+      _showErrorMessage('An error occurred. Please try again.');
+    }
+  }
+
+  void _showForgotPasswordDialog() {
+    final TextEditingController emailController = TextEditingController();
+    bool isLoading = false;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: Text(
+              'Reset Password',
+              style: TextStyle(
+                color: TColor.primary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Enter your email to receive a password reset link',
+                  style: TextStyle(color: TColor.primaryText),
+                ),
+                const SizedBox(height: 20),
+                TextFormField(
+                  controller: emailController,
+                  decoration: InputDecoration(
+                    labelText: 'Email',
+                    prefixIcon: Icon(Icons.email, color: TColor.primary),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                  ),
+                  keyboardType: TextInputType.emailAddress,
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: isLoading ? null : () => Navigator.pop(context),
+                child: Text('Cancel',
+                    style: TextStyle(color: TColor.secondaryText)),
+              ),
+              ElevatedButton(
+                onPressed: isLoading
+                    ? null
+                    : () async {
+                  if (emailController.text.isEmpty ||
+                      !RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                          .hasMatch(emailController.text)) {
+                    _showErrorMessage('Please enter a valid email');
+                    return;
+                  }
+
+                  setState(() => isLoading = true);
+                  await _sendPasswordResetEmail(emailController.text);
+                  setState(() => isLoading = false);
+                  if (mounted) Navigator.pop(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: TColor.primary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 20, vertical: 12),
+                ),
+                child: isLoading
+                    ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                )
+                    : Text(
+                  'Send Link',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
   Future<void> _signUp() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
     try {
-      // Create a new user
-      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+      UserCredential userCredential = await _auth
+          .createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
 
       debugPrint('User created with UID: ${userCredential.user?.uid}');
 
-      // Save additional user information in Firestore
-      await _firestore.collection('users').doc(userCredential.user!.uid).set({
+      await _firestore.collection('users')
+          .doc(userCredential.user!.uid).set({
         'email': _emailController.text.trim(),
         'createdAt': FieldValue.serverTimestamp(),
         'lastLogin': FieldValue.serverTimestamp(),
-      }).then((_) {
-        debugPrint('User info written to Firestore');
-      }).catchError((error) {
-        debugPrint('Error writing to Firestore: $error');
-        throw Exception('Error writing to Firestore');
       });
 
-      // Send email verification if not already verified
       if (!userCredential.user!.emailVerified) {
         await userCredential.user!.sendEmailVerification();
         debugPrint('Email verification sent');
       }
 
-      // Show success message
       _showSuccessMessage('Sign up successful! Please verify your email.');
+      setState(() => _signUpSuccessful = true);
 
-      // Set the state to indicate success
-      setState(() {
-        _signUpSuccessful = true;
-      });
-      debugPrint('Set _signUpSuccessful to true');
-
-      // Delay navigation (for testing, you can comment this out)
       Future.delayed(const Duration(seconds: 2), () {
         if (!mounted) return;
         Navigator.pushReplacement(
@@ -72,7 +164,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
         );
       });
     } on FirebaseAuthException catch (e) {
-      debugPrint('FirebaseAuthException: ${e.toString()}');
       _showErrorMessage(e.message ?? 'Authentication failed');
     } catch (e, stack) {
       debugPrint('Exception: ${e.toString()}');
@@ -116,7 +207,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 width: MediaQuery.of(context).size.width * 0.7,
               ),
               const SizedBox(height: 40),
-              // Email Field
               TextFormField(
                 controller: _emailController,
                 decoration: InputDecoration(
@@ -131,14 +221,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   if (value == null || value.isEmpty) {
                     return 'Please enter your email';
                   }
-                  if (!RegExp(r'^[\w.-]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                  if (!RegExp(r'^[\w.-]+@([\w-]+\.)+[\w-]{2,4}$')
+                      .hasMatch(value)) {
                     return 'Please enter a valid email';
                   }
                   return null;
                 },
               ),
               const SizedBox(height: 20),
-              // Password Field
               TextFormField(
                 controller: _passwordController,
                 obscureText: _obscurePassword,
@@ -147,10 +237,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   prefixIcon: Icon(Icons.lock, color: TColor.primary),
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                      _obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
                       color: TColor.primary,
                     ),
-                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                    onPressed: () => setState(
+                            () => _obscurePassword = !_obscurePassword),
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(18),
@@ -166,8 +259,22 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 30),
-              // Conditional UI based on sign-up success
+              const SizedBox(height: 15),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: _showForgotPasswordDialog,
+                  child: Text(
+                    'Forgot Password?',
+                    style: TextStyle(
+                      color: TColor.primary,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 15),
               if (!_signUpSuccessful) ...[
                 _isLoading
                     ? const CircularProgressIndicator()
@@ -187,7 +294,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   onPressed: () {
                     Navigator.pushReplacement(
                       context,
-                      MaterialPageRoute(builder: (context) => const LoginScreen()),
+                      MaterialPageRoute(
+                          builder: (context) => const LoginScreen()),
                     );
                   },
                   child: Text.rich(
@@ -207,7 +315,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                 ),
               ] else ...[
-                // Display success message with "Go to Login" button
                 const Text(
                   'You have signed up successfully!\nPlease verify your email before logging in.',
                   style: TextStyle(
@@ -230,7 +337,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   onPressed: () {
                     Navigator.pushReplacement(
                       context,
-                      MaterialPageRoute(builder: (context) => const LoginScreen()),
+                      MaterialPageRoute(
+                          builder: (context) => const LoginScreen()),
                     );
                   },
                 ),
