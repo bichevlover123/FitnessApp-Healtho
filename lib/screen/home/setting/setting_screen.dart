@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:healtho_gym/common/color_extension.dart';
-import 'package:healtho_gym/screen/home/notification/notification_screen.dart';
-import 'package:healtho_gym/screen/home/reminder/reminder_screen.dart';
 import 'package:healtho_gym/screen/home/setting/profile_screen.dart';
 import 'package:healtho_gym/screen/home/setting/setting_row.dart';
+import 'package:healtho_gym/screen/login/login_screen.dart';
 
 class SettingScreen extends StatefulWidget {
   const SettingScreen({super.key});
@@ -13,6 +13,44 @@ class SettingScreen extends StatefulWidget {
 }
 
 class _SettingScreenState extends State<SettingScreen> {
+  Future<void> _logout() async {
+    try {
+      await FirebaseAuth.instance.signOut();
+      // Navigate to login screen and clear stack
+      Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+              (Route<dynamic> route) => false
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error signing out: ${e.toString()}')),
+      );
+    }
+  }
+
+  void _showLogoutConfirmation() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Log Out"),
+        content: const Text("Are you sure you want to log out?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _logout();
+            },
+            child: const Text('Log Out', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -37,7 +75,8 @@ class _SettingScreenState extends State<SettingScreen> {
               icon: "assets/img/user_placeholder.png",
               isIconCircle: true,
               onPressed: () {
-                context.push( const ProfileScreen());
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => const ProfileScreen()));
               }),
           SettingRow(
               title: "Language options",
@@ -45,45 +84,15 @@ class _SettingScreenState extends State<SettingScreen> {
               value: "Eng",
               onPressed: () {}),
           SettingRow(
-              title: "Health Data",
-              icon: "assets/img/data.png",
-              value: "",
-              onPressed: () {}),
-          SettingRow(
               title: "Notification",
               icon: "assets/img/notification.png",
               value: "On",
-              onPressed: () {
-                context.push(const NotificationScreen());
-              }),
-          SettingRow(
-              title: "Refer a Friend",
-              icon: "assets/img/share.png",
-              value: "",
               onPressed: () {}),
-          SettingRow(
-              title: "Feedback",
-              icon: "assets/img/feedback.png",
-              value: "",
-              onPressed: () {}),
-          SettingRow(
-              title: "Rate Us",
-              icon: "assets/img/rating.png",
-              value: "",
-              onPressed: () {}),
-          SettingRow(
-              title: "Reminder",
-              icon: "assets/img/rating.png",
-              value: "",
-              onPressed: () {
-                context.push(const ReminderScreen());
-              }),
           SettingRow(
               title: "Log Out",
               icon: "assets/img/logout.png",
               value: "",
-              onPressed: () {}),
-          
+              onPressed: _showLogoutConfirmation),
         ],
       ),
     );
