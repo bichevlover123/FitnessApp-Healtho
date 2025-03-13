@@ -3,12 +3,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:healtho_gym/common/color_extension.dart';
 import 'package:healtho_gym/common_widget/top_tab_button.dart';
-import 'package:healtho_gym/screen/home/notification/notification_screen.dart';
-import 'package:healtho_gym/screen/home/top_tab_view/challenges/challenges_tab_screen.dart';
-import 'package:healtho_gym/screen/home/top_tab_view/dietician/dietician_tab_screen.dart';
 import 'package:healtho_gym/screen/home/top_tab_view/exercises/exercises_tab_screen.dart';
 import 'package:healtho_gym/screen/home/top_tab_view/health_tip/health_tip_screen.dart';
-import 'package:healtho_gym/screen/home/top_tab_view/trainer/trainer_tab_screen.dart';
+import 'package:healtho_gym/screen/home/top_tab_view/weight_monitor/weight_monitor_screen.dart';
 import 'package:healtho_gym/screen/home/top_tab_view/workout_plan/workout_plan_screen.dart';
 import 'package:healtho_gym/screen/home/setting/profile_screen.dart';
 
@@ -25,9 +22,7 @@ class _TopTabViewScreenState extends State<TopTabViewScreen>
     "Health Tips",
     "Exercises",
     "Workout Plan",
-    "Challenges",
-    "Trainers",
-    "Dietician"
+    "Weight Monitor"
   ];
 
   int selectTab = 0;
@@ -141,9 +136,7 @@ class _TopTabViewScreenState extends State<TopTabViewScreen>
                 HealthTipScreen(),
                 ExercisesScreen(),
                 WorkoutPlanScreen(),
-                ChallengesScreen(),
-                TrainerTabScreen(),
-                DieticianTabScreen(),
+                WeightMonitorScreen(),
               ],
             ),
           ),

@@ -62,22 +62,12 @@ class ExercisesRow extends StatelessWidget {
                   onTap: () {},
                   child: SizedBox(
                     width: 40,
-                    child: Image.asset(
-                      "assets/img/fav_white.png",
-                      width: 25,
-                      height: 25,
-                    ),
                   ),
                 ),
                 InkWell(
                   onTap: () {},
                   child: SizedBox(
                     width: 40,
-                    child: Image.asset(
-                      "assets/img/share_white.png",
-                      width: 25,
-                      height: 25,
-                    ),
                   ),
                 ),
 

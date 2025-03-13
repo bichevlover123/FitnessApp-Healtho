@@ -2,7 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:healtho_gym/common/color_extension.dart';
 
 class WorkoutExercisesDetailScreen extends StatefulWidget {
-  const WorkoutExercisesDetailScreen({super.key});
+  final String title;
+  final List<String> descriptionSteps;
+  final String equipment;
+  final String targetMuscles;
+  final List<String> detailImages;
+
+  const WorkoutExercisesDetailScreen({
+    super.key,
+    required this.title,
+    this.descriptionSteps = const [],
+    this.equipment = "Not specified",
+    this.targetMuscles = "Not specified",
+    this.detailImages = const [],
+  });
 
   @override
   State<WorkoutExercisesDetailScreen> createState() =>
@@ -11,10 +24,8 @@ class WorkoutExercisesDetailScreen extends StatefulWidget {
 
 class _WorkoutExercisesDetailScreenState
     extends State<WorkoutExercisesDetailScreen> {
-  List imageArr = [
-    "assets/img/ed_1.png",
-    "assets/img/ed_2.png",
-  ];
+  PageController pageController = PageController();
+  int currentPage = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -22,11 +33,12 @@ class _WorkoutExercisesDetailScreenState
       appBar: AppBar(
         backgroundColor: TColor.secondary,
         centerTitle: false,
-        title: const Text(
-          "Bench Press",
-          style: TextStyle(
+        title: Text(
+          widget.title,
+          style: const TextStyle(
             color: Colors.white,
             fontSize: 18,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ),
@@ -34,113 +46,135 @@ class _WorkoutExercisesDetailScreenState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Image Carousel with Indicator
             SizedBox(
-              height: context.width * 0.4 + 40,
-              child: ListView.separated(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                  scrollDirection: Axis.horizontal,
-                  itemBuilder: (context, index) {
-                    return  ClipRRect(
-                        borderRadius: BorderRadius.circular(15),
+              height: context.width * 0.8,
+              child: Stack(
+                children: [
+                  PageView.builder(
+                    controller: pageController,
+                    itemCount: widget.detailImages.length,
+                    onPageChanged: (index) {
+                      setState(() => currentPage = index);
+                    },
+                    itemBuilder: (context, index) {
+                      return ClipRRect(
                         child: Image.asset(
-                          imageArr[index],
-                          width: context.width * 0.7,
-                          height: context.width * 0.4,
+                          widget.detailImages[index],
+                          width: double.infinity,
                           fit: BoxFit.cover,
                         ),
-                      
-                    );
-                  },
-                  separatorBuilder: (context, index) => const SizedBox(
-                        width: 20,
+                      );
+                    },
+                  ),
+                  if (widget.detailImages.length > 1)
+                    Positioned(
+                      bottom: 20,
+                      left: 0,
+                      right: 0,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(widget.detailImages.length, (index) {
+                          return Container(
+                            width: 8,
+                            height: 8,
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: currentPage == index
+                                  ? TColor.primary
+                                  : Colors.white.withOpacity(0.5),
+                            ),
+                          );
+                        }),
                       ),
-                  itemCount: imageArr.length),
+                    ),
+                ],
+              ),
             ),
+
+            // Content Section
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+              padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Exercise Title
                   Text(
-                    "Bench Press",
+                    widget.title,
                     style: TextStyle(
                       color: TColor.primaryText,
-                      fontSize: 15,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Instructions Header
+                  Text(
+                    "Execution Steps",
+                    style: TextStyle(
+                      color: TColor.primary,
+                      fontSize: 20,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(
-                    height: 8,
-                  ),
-                  Text(
-                    "1) Lie back on a flat bench. Using a medium width grip, lift the bar from the rack and hold it straight over you with your arms locked. This will be your starting position. ",
-                    style: TextStyle(
-                      color: TColor.primaryText,
-                      fontSize: 13,
+                  const SizedBox(height: 12),
+
+                  // Step-by-Step Instructions
+                  ...widget.descriptionSteps.map((step) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 24,
+                          height: 24,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: TColor.primary,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            "${widget.descriptionSteps.indexOf(step) + 1}",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            step,
+                            style: TextStyle(
+                              color: TColor.primaryText,
+                              fontSize: 15,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
+                  )).toList(),
+
+                  const SizedBox(height: 24),
+
+                  // Equipment Section
+                  _buildInfoCard(
+                    title: "Equipment Required",
+                    content: widget.equipment,
+                    icon: Icons.fitness_center,
                   ),
-                  const SizedBox(
-                    height: 8,
-                  ),
-                  Text(
-                    "2) From the starting position, breathe in and begin coming down slowly until the bar touches your middle chest.",
-                    style: TextStyle(
-                      color: TColor.primaryText,
-                      fontSize: 13,
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 8,
-                  ),
-                  Text(
-                    "3) After a brief pause, push the bar back to the starting position as you breathe out.",
-                    style: TextStyle(
-                      color: TColor.primaryText,
-                      fontSize: 13,
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 25,
-                  ),
-                  Text(
-                    "Equipment Required",
-                    style: TextStyle(
-                      color: TColor.primaryText,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 8,
-                  ),
-                  Text(
-                    "Barbell, Bench , Plate, Lock",
-                    style: TextStyle(
-                      color: TColor.primaryText,
-                      fontSize: 13,
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 25,
-                  ),
-                  Text(
-                    "Target Muscle",
-                    style: TextStyle(
-                      color: TColor.primaryText,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 8,
-                  ),
-                  Text(
-                    "Chest, Shoulder, Triceps",
-                    style: TextStyle(
-                      color: TColor.primaryText,
-                      fontSize: 13,
-                    ),
+
+                  const SizedBox(height: 16),
+
+                  // Target Muscles Section
+                  _buildInfoCard(
+                    title: "Target Muscles",
+                    content: widget.targetMuscles,
+                    icon: Icons.accessibility_new,
                   ),
                 ],
               ),
@@ -148,41 +182,60 @@ class _WorkoutExercisesDetailScreenState
           ],
         ),
       ),
-      floatingActionButton: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-        decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(25),
-            boxShadow: const [
-              BoxShadow(
-                color: Colors.black12,
-                blurRadius: 2,
-              ),
-            ]),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            InkWell(
-              onTap: () {},
-              child: Image.asset(
-                "assets/img/fav_color.png",
-                width: 25,
-                height: 25,
-              ),
+    );
+  }
+
+  Widget _buildInfoCard({required String title, required String content, required IconData icon}) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: TColor.primary.withOpacity(0.1),
+              shape: BoxShape.circle,
             ),
-            const SizedBox(
-              width: 20,
+            child: Icon(icon, color: TColor.primary),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: TColor.secondaryText,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  content,
+                  style: TextStyle(
+                    color: TColor.primaryText,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
-            InkWell(
-              onTap: () {},
-              child: Image.asset(
-                "assets/img/share.png",
-                width: 25,
-                height: 25,
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
