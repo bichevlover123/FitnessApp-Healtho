@@ -3,7 +3,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:healtho_gym/common/color_extension.dart';
 
+/// Calculator for daily calorie needs based on user data and goals
 class CalorieCalculator {
+  /// Calculate maintenance and target calories based on user data and plan goal
   static Future<Map<String, dynamic>> calculateCalories(String planGoal) async {
     try {
       final user = FirebaseAuth.instance.currentUser;
@@ -52,12 +54,22 @@ class CalorieCalculator {
   }
 }
 
+/// Screen displaying detailed information about a workout plan
 class WorkoutPlanDetailScreen extends StatelessWidget {
   final Map<String, dynamic> plan;
 
   const WorkoutPlanDetailScreen({super.key, required this.plan});
 
-  // Add this formatting method
+  /// Format plan goal string for display
+  String _formatPlanGoal(String goal) {
+    return goal.replaceAll('_', ' ').split(' ')
+        .map((word) => word.isNotEmpty
+        ? word[0].toUpperCase() + word.substring(1).toLowerCase()
+        : '')
+        .join(' ');
+  }
+
+  /// Get training routine based on split type
   List<Widget> _getRoutine(String split) {
     switch (split) {
       case 'upper_lower_2x_week':
@@ -71,13 +83,6 @@ class WorkoutPlanDetailScreen extends StatelessWidget {
       default:
         return [];
     }
-  }
-  String _formatPlanGoal(String goal) {
-    return goal.replaceAll('_', ' ').split(' ')
-        .map((word) => word.isNotEmpty
-        ? word[0].toUpperCase() + word.substring(1).toLowerCase()
-        : '')
-        .join(' ');
   }
 
   @override
@@ -110,7 +115,6 @@ class WorkoutPlanDetailScreen extends StatelessWidget {
               children: [
                 _buildCalorieCard(calorieData),
                 const SizedBox(height: 20),
-                // Updated to use formatted goal
                 _buildDetailCard('Workout Goal', _formatPlanGoal(planGoal)),
                 _buildDetailCard('Duration', '${plan['duration']} weeks'),
                 _buildDetailCard('Training Split', split),
@@ -142,6 +146,7 @@ class WorkoutPlanDetailScreen extends StatelessWidget {
     );
   }
 
+  /// Build calorie information card
   Widget _buildCalorieCard(Map<String, dynamic> data) {
     return Card(
       margin: const EdgeInsets.all(8),
@@ -157,7 +162,6 @@ class WorkoutPlanDetailScreen extends StatelessWidget {
                     color: TColor.primary)),
             const SizedBox(height: 10),
             _buildCalorieRow('Maintenance', data['maintenance']),
-            // Updated to use formatted goal
             _buildCalorieRow('Target (${_formatPlanGoal(data['goal'])})', data['target']),
           ],
         ),
@@ -165,7 +169,7 @@ class WorkoutPlanDetailScreen extends StatelessWidget {
     );
   }
 
-
+  /// Build row for calorie information
   Widget _buildCalorieRow(String label, double calories) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -186,7 +190,107 @@ class WorkoutPlanDetailScreen extends StatelessWidget {
     );
   }
 
+  /// Build detailed information card
+  Widget _buildDetailCard(String title, String value) {
+    return Card(
+      margin: const EdgeInsets.all(8),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Text(
+              "$title: ",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: TColor.primaryText,
+                fontSize: 16,
+              ),
+            ),
+            Expanded(
+              child: Text(
+                value,
+                style: TextStyle(
+                  color: TColor.secondaryText,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
+  /// Build exercise day card
+  Widget _buildExerciseDay(String day, List<String> exercises) {
+    return Card(
+      margin: const EdgeInsets.all(8),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              day,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: TColor.primary,
+              ),
+            ),
+            const SizedBox(height: 10),
+            ...exercises.map((exercise) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Text(
+                "➤ $exercise",
+                style: TextStyle(
+                  color: TColor.primaryText,
+                  fontSize: 16,
+                ),
+              ),
+            )),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Build rest day card
+  Widget _buildRestDay(String day, List<String> activities) {
+    return Card(
+      color: Colors.grey[200],
+      margin: const EdgeInsets.all(8),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              day,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[700],
+              ),
+            ),
+            const SizedBox(height: 10),
+            ...activities.map((activity) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Text(
+                "☁️ $activity",
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 16,
+                ),
+              ),
+            )),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Build Push-Pull-Legs 2x weekly routine
   List<Widget> _buildPPL2xRoutine() {
     return [
       _buildExerciseDay("Day 1: Push Day", [
@@ -236,6 +340,7 @@ class WorkoutPlanDetailScreen extends StatelessWidget {
     ];
   }
 
+  /// Build Push-Pull-Legs 1x weekly routine
   List<Widget> _buildPPL1xRoutine() {
     return [
       _buildExerciseDay("Day 1: Push Day", [
@@ -278,6 +383,7 @@ class WorkoutPlanDetailScreen extends StatelessWidget {
     ];
   }
 
+  /// Build Upper/Lower 2x weekly routine
   List<Widget> _buildUpperLowerRoutine() {
     return [
       _buildExerciseDay("Day 1: Upper Body", [
@@ -323,6 +429,7 @@ class WorkoutPlanDetailScreen extends StatelessWidget {
     ];
   }
 
+  /// Build Full Body 3x weekly routine
   List<Widget> _buildFullbodyRoutine() {
     return [
       _buildExerciseDay("Day 1: Full Body", [
@@ -360,102 +467,5 @@ class WorkoutPlanDetailScreen extends StatelessWidget {
         "Light mobility work optional"
       ]),
     ];
-  }
-
-  Widget _buildDetailCard(String title, String value) {
-    return Card(
-      margin: const EdgeInsets.all(8),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Text(
-              "$title: ",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: TColor.primaryText,
-                fontSize: 16,
-              ),
-            ),
-            Expanded(
-              child: Text(
-                value,
-                style: TextStyle(
-                  color: TColor.secondaryText,
-                  fontSize: 16,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildExerciseDay(String day, List<String> exercises) {
-    return Card(
-      margin: const EdgeInsets.all(8),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              day,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: TColor.primary,
-              ),
-            ),
-            const SizedBox(height: 10),
-            ...exercises.map((exercise) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Text(
-                "➤ $exercise",
-                style: TextStyle(
-                  color: TColor.primaryText,
-                  fontSize: 16,
-                ),
-              ),
-            )),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRestDay(String day, List<String> activities) {
-    return Card(
-      color: Colors.grey[200],
-      margin: const EdgeInsets.all(8),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              day,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[700],
-              ),
-            ),
-            const SizedBox(height: 10),
-            ...activities.map((activity) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Text(
-                "☁️ $activity",
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 16,
-                ),
-              ),
-            )),
-          ],
-        ),
-      ),
-    );
   }
 }

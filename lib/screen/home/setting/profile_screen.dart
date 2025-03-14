@@ -6,6 +6,9 @@ import 'package:healtho_gym/screen/home/setting/setting_row.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:healtho_gym/screen/login/login_screen.dart';
 
+/// Profile screen displayed in the settings tab
+/// This screen allows users to view and edit their profile information,
+/// including personal details, fitness goals, and account settings.
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -14,21 +17,40 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  /// User's name (default: "User")
   String _name = "User";
+
+  /// Selected fitness level (Beginner, Intermediate, Advanced)
   String _selectedLevel = "Beginner";
+
+  /// Selected fitness goal
   String _selectedGoal = "Mass Gain";
+
+  /// User's weight
   String _weight = "70 KG";
+
+  /// User's height
   String _height = "170 cm";
+
+  /// User's age
   String _age = "18";
+
+  /// Loading state indicator
   bool _isLoading = true;
 
+  /// Firebase Firestore instance for database operations
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  /// Firebase Authentication instance for user management
   final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  /// Current authenticated user
   User? _currentUser;
 
   @override
   void initState() {
     super.initState();
+    // Listen for authentication state changes
     _auth.authStateChanges().listen((User? user) {
       if (user != null) {
         setState(() => _currentUser = user);
@@ -39,12 +61,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
+  /// Load user data from Firestore
   void _loadUserData() async {
     if (_currentUser == null) return;
 
     try {
+      // Get user document from Firestore
       DocumentSnapshot doc = await _firestore.collection('users').doc(_currentUser!.uid).get();
 
+      // Create document if it doesn't exist
       if (!doc.exists) {
         await _firestore.collection('users').doc(_currentUser!.uid).set({
           'name': _name,
@@ -58,6 +83,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         doc = await _firestore.collection('users').doc(_currentUser!.uid).get();
       }
 
+      // Update state with user data
       if (doc.exists) {
         setState(() {
           _name = doc['name']?.toString() ?? "User";
@@ -75,66 +101,78 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  /// Save a field to Firestore
   void _saveField(String field, dynamic value) async {
     if (_currentUser == null) return;
 
     try {
+      // Update user document in Firestore
       await _firestore.collection('users').doc(_currentUser!.uid).set({
         field: value,
         'lastLogin': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
 
+      // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Updated successfully!')),
       );
     } catch (e) {
+      // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error updating: ${e.toString()}')),
       );
     }
   }
 
+  /// Show level selection bottom sheet
   void _showLevelPicker() {
     String tempLevel = _selectedLevel;
     final List<String> levels = ["Beginner", "Intermediate", "Advanced"];
 
     showModalBottomSheet(
-      context: context,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text("Select Level",
+        context: context,
+        builder: (context) => Container(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                // Title
+                Text("Select Level",
                 style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: TColor.primaryText)),
             const Divider(),
+            // Radio list tiles for each level
             ...levels.map((level) => RadioListTile(
-              title: Text(level, style: const TextStyle(fontSize: 18)),
-              value: level,
-              groupValue: tempLevel,
-              activeColor: Colors.orange,
-              onChanged: (value) => tempLevel = value.toString(),
-            )).toList(),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20))),
-              onPressed: () {
-                setState(() => _selectedLevel = tempLevel);
-                _saveField('level', tempLevel);
-                Navigator.pop(context);
-              },
-              child: const Text("Save", style: TextStyle(color: Colors.white)),
-            ),
-          ],
-        ),
-      ),
+        title: Text(level, style: const TextStyle(fontSize: 18)),
+    value: level,
+    groupValue: tempLevel,
+    activeColor: Colors.orange,
+    onChanged: (value) => tempLevel = value.toString(),
+    )).toList(),
+    // Save button
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
+                    onPressed: () {
+                      setState(() => _selectedLevel = tempLevel);
+                      _saveField('level', tempLevel);
+                      Navigator.pop(context);
+                    },
+                    child: const Text("Save", style: TextStyle(color: Colors.white)),
+                  ),
+    ],
+    ),
+    ),
     );
   }
+
+  /// Show logout confirmation dialog
   void _showLogoutConfirmation() {
     showDialog(
       context: context,
@@ -145,8 +183,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Icon
             Icon(Icons.exit_to_app, size: 40, color: Colors.orange),
             const SizedBox(height: 20),
+            // Message
             Text("Are you sure you want to log out?",
                 textAlign: TextAlign.center,
                 style: TextStyle(
@@ -155,6 +195,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   fontWeight: FontWeight.w600,
                 )),
             const SizedBox(height: 25),
+            // Buttons
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -209,48 +250,55 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  /// Show goal selection bottom sheet
   void _showGoalPicker() {
     String tempGoal = _selectedGoal;
     final goals = ["Weight Loss", "Muscle Gain", "Fat Loss", "Others"];
 
     showModalBottomSheet(
-      context: context,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text("Select Goal",
+        context: context,
+        builder: (context) => Container(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                // Title
+                Text("Select Goal",
                 style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: TColor.primaryText)),
             const Divider(),
+            // Radio list tiles for each goal
             ...goals.map((goal) => RadioListTile(
-              title: Text(goal, style: const TextStyle(fontSize: 18)),
-              value: goal,
-              groupValue: tempGoal,
-              activeColor: Colors.orange,
-              onChanged: (value) => tempGoal = value.toString(),
-            )).toList(),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20))),
-              onPressed: () {
-                setState(() => _selectedGoal = tempGoal);
-                _saveField('goal', tempGoal);
-                Navigator.pop(context);
-              },
-              child: const Text("Save", style: TextStyle(color: Colors.white)),
-            ),
-          ],
-        ),
-      ),
+        title: Text(goal, style: const TextStyle(fontSize: 18)),
+    value: goal,
+    groupValue: tempGoal,
+    activeColor: Colors.orange,
+    onChanged: (value) => tempGoal = value.toString(),
+    )).toList(),
+    // Save button
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
+                    onPressed: () {
+                      setState(() => _selectedGoal = tempGoal);
+                      _saveField('goal', tempGoal);
+                      Navigator.pop(context);
+                    },
+                    child: const Text("Save", style: TextStyle(color: Colors.white)),
+                  ),
+    ],
+    ),
+    ),
     );
   }
 
+  /// Show input dialog for numerical values
   Future<void> _showNumberInputDialog(String title, String currentValue, String unit) async {
     final numericValue = currentValue.replaceAll(unit, "").trim();
     TextEditingController controller = TextEditingController(text: numericValue);
@@ -291,6 +339,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  /// Show change email dialog
   void _showChangeEmailDialog() async {
     final controller = TextEditingController();
     await showDialog(
@@ -300,6 +349,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Email verification status
             if (!_currentUser!.emailVerified)
               Column(
                 children: [
@@ -318,6 +368,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const Divider(),
                 ],
               ),
+            // New email input
             TextField(
               controller: controller,
               keyboardType: TextInputType.emailAddress,
@@ -338,6 +389,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             onPressed: () async {
               if (controller.text.isEmpty || !_currentUser!.emailVerified) return;
 
+              // Get current password confirmation
               final password = await showDialog<String>(
                 context: context,
                 builder: (context) {
@@ -374,6 +426,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               if (password == null || password.isEmpty) return;
 
               try {
+                // Reauthenticate and update email
                 final credential = EmailAuthProvider.credential(
                   email: _currentUser!.email!,
                   password: password,
@@ -397,6 +450,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  /// Show change password dialog
   void _showChangePasswordDialog() async {
     final newPassController = TextEditingController();
     final currentPassController = TextEditingController();
@@ -408,6 +462,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Current password input
             TextField(
               controller: currentPassController,
               obscureText: true,
@@ -417,6 +472,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             const SizedBox(height: 10),
+            // New password input
             TextField(
               controller: newPassController,
               obscureText: true,
@@ -438,6 +494,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               if (newPassController.text.isEmpty || currentPassController.text.isEmpty) return;
 
               try {
+                // Reauthenticate and update password
                 final credential = EmailAuthProvider.credential(
                   email: _currentUser!.email!,
                   password: currentPassController.text,
@@ -487,6 +544,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // User name display
                 Text(
                   _name,
                   style: TextStyle(
@@ -496,6 +554,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
                 const SizedBox(height: 4),
+                // Email display with verification status
                 Row(
                   children: [
                     Text(
@@ -517,6 +576,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ],
                 ),
+                // Resend verification email button
                 if (!(_currentUser?.emailVerified ?? true))
                   TextButton(
                     onPressed: () async {
@@ -528,6 +588,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: const Text('Resend Verification Email'),
                   ),
                 const SizedBox(height: 20),
+                // Change email and password buttons
                 Row(
                   children: [
                     Expanded(
@@ -565,6 +626,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
 
+          // Setting rows for various profile options
           SettingRow(
             title: "Level",
             icon: "assets/img/level.png",
@@ -602,6 +664,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               );
               if (result != null) {
+                // Validate age input
                 if (int.tryParse(result) == null || int.parse(result) < 1 || int.parse(result) > 120) {
                   ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Please enter a valid age between 1-120')));
@@ -622,7 +685,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   borderRadius: BorderRadius.circular(15),
                 ),
               ),
-              onPressed: _showLogoutConfirmation, // Changed to use confirmation dialog
+              onPressed: _showLogoutConfirmation, // Use confirmation dialog
               child: const Text("Log Out",
                   style: TextStyle(
                     color: Colors.white,
@@ -637,6 +700,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
+/// Custom dialog for number input
 class _NumberInputDialog extends StatelessWidget {
   final String title;
   final String initialValue;

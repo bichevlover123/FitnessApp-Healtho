@@ -3,8 +3,15 @@ import 'package:healtho_gym/common/color_extension.dart';
 import 'package:healtho_gym/screen/home/top_tab_view/exercises/exercises_row.dart';
 import 'package:healtho_gym/screen/home/top_tab_view/workout_plan/workout_exercises_screen.dart';
 
+/// Screen displaying a list of exercises for a specific muscle group
+/// This screen takes a muscle group index and title, then displays
+/// a filtered list of exercises with their details. Users can tap on
+/// exercises to view more information.
 class ExercisesNameScreen extends StatefulWidget {
+  /// Index of the muscle group to display
   final int muscleGroupIndex;
+
+  /// Title of the muscle group
   final String groupTitle;
 
   const ExercisesNameScreen({
@@ -12,13 +19,20 @@ class ExercisesNameScreen extends StatefulWidget {
     required this.muscleGroupIndex,
     required this.groupTitle,
   });
-
   @override
   State<ExercisesNameScreen> createState() => _ExercisesNameScreenState();
 }
 
 
 class _ExercisesNameScreenState extends State<ExercisesNameScreen> {
+  /// List of all exercises with their details
+  /// Each exercise contains:
+  /// - title: Name of the exercise
+  /// - image: Thumbnail image path
+  /// - detail_images: List of detailed image paths
+  /// - description_steps: Exercise steps
+  /// - equipment: Required equipment
+  /// - target_muscles: Muscles worked
   List listArr = [
     {
       "title": "Bench press",
@@ -502,7 +516,7 @@ class _ExercisesNameScreenState extends State<ExercisesNameScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Calculate sublist indices safely.
+    // Calculate the sublist of exercises for the current muscle group
     int start = widget.muscleGroupIndex * 5;
     List filteredList;
     if (start >= listArr.length) {
@@ -517,6 +531,7 @@ class _ExercisesNameScreenState extends State<ExercisesNameScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        // App bar configuration
         backgroundColor: TColor.secondary,
         centerTitle: false,
         title: Text(
@@ -536,32 +551,24 @@ class _ExercisesNameScreenState extends State<ExercisesNameScreen> {
           return ExercisesRow(
             obj: obj,
             onPressed: () {
-              List<String> descSteps;
-              if (obj["description_steps"] is List) {
-                descSteps = (obj["description_steps"] as List<dynamic>)
-                    .map((e) => e.toString())
-                    .toList();
-              } else {
-                descSteps = [obj["description_steps"].toString()];
-              }
-              List<String> detailImgs;
-              if (obj["detail_images"] is List) {
-                detailImgs = (obj["detail_images"] as List<dynamic>)
-                    .map((e) => e.toString())
-                    .toList();
-              } else {
-                detailImgs = [obj["detail_images"].toString()];
-              }
+              // Prepare exercise details for the detail screen
+              List<String> descSteps = (obj["description_steps"] as List<dynamic>)
+                  .map((e) => e.toString())
+                  .toList();
+              List<String> detailImgs = (obj["detail_images"] as List<dynamic>)
+                  .map((e) => e.toString())
+                  .toList();
 
+              // Navigate to the exercise detail screen
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => WorkoutExercisesDetailScreen(
                     title: obj["title"]?.toString() ?? "Exercise",
-                    descriptionSteps: (obj["description_steps"] as List?)?.cast<String>() ?? [],
+                    descriptionSteps: descSteps,
                     equipment: obj["equipment"]?.toString() ?? "Not specified",
                     targetMuscles: obj["target_muscles"]?.toString() ?? "Not specified",
-                    detailImages: (obj["detail_images"] as List?)?.cast<String>() ?? [],
+                    detailImages: detailImgs,
                   ),
                 ),
               );

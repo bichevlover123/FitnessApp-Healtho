@@ -1,11 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:healtho_gym/common/color_extension.dart';
 
+/// A reusable row widget for settings screens
+/// This component displays a row with an icon, title, and value,
+/// typically used in settings screens for various configuration options.
 class SettingRow extends StatelessWidget {
+  /// Title text displayed in the row
   final String title;
+
+  /// Path to the icon asset
   final String icon;
+
+  /// Value text displayed on the right side
   final String value;
+
+  /// Whether the icon should be displayed in a circular shape
   final bool isIconCircle;
+
+  /// Callback function triggered when the row is tapped
   final VoidCallback onPressed;
 
   const SettingRow({
@@ -27,11 +39,12 @@ class SettingRow extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 15),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         decoration: BoxDecoration(
-          color: TColor.txtBG,
-          borderRadius: BorderRadius.circular(12),
+          color: TColor.txtBG, // Light background color
+          borderRadius: BorderRadius.circular(12), // Rounded corners
         ),
         child: Row(
           children: [
+            // Icon display with optional circular shape
             ClipRRect(
               borderRadius: BorderRadius.circular(isIconCircle ? 15 : 0),
               child: Image.asset(
@@ -40,9 +53,8 @@ class SettingRow extends StatelessWidget {
                 height: 22,
               ),
             ),
-            const SizedBox(
-              width: 20,
-            ),
+            const SizedBox(width: 20),
+            // Title text
             Expanded(
               child: Text(
                 title,
@@ -53,9 +65,8 @@ class SettingRow extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(
-              width: 8,
-            ),
+            const SizedBox(width: 8),
+            // Value text
             Text(
               value,
               style: TextStyle(

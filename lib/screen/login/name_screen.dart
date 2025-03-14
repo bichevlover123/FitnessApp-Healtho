@@ -6,6 +6,9 @@ import 'package:healtho_gym/common_widget/round_button.dart';
 import 'package:healtho_gym/screen/login/goal_screen.dart';
 import 'package:healtho_gym/screen/login/login_screen.dart';
 
+/// Screen for collecting user's name and gender
+/// This screen is displayed after login if the user's profile is incomplete.
+/// It collects the user's name and gender and saves them to Firestore.
 class NameScreen extends StatefulWidget {
   const NameScreen({super.key});
 
@@ -14,20 +17,28 @@ class NameScreen extends StatefulWidget {
 }
 
 class _NameScreenState extends State<NameScreen> {
+  /// Controller for the name input field
   final TextEditingController _nameController = TextEditingController();
+
+  /// Form key for validation
   final _formKey = GlobalKey<FormState>();
+
+  /// Firebase authentication instance
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  String _selectedGender = ""; // Holds the selected gender ("Male" or "Female")
+
+  /// Currently selected gender
+  String _selectedGender = "";
 
   @override
   void dispose() {
+    // Dispose the controller when the widget is removed
     _nameController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // If there's no logged-in user, show a message and redirect to LoginScreen.
+    // Check if user is logged in, otherwise redirect to login screen
     if (_auth.currentUser == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -54,6 +65,7 @@ class _NameScreenState extends State<NameScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 30),
+                // Name input section
                 Text(
                   "Enter Your Name",
                   style: TextStyle(
@@ -79,6 +91,7 @@ class _NameScreenState extends State<NameScreen> {
                   },
                 ),
                 const SizedBox(height: 20),
+                // Gender selection section
                 Text(
                   "Select Your Gender",
                   style: TextStyle(
@@ -90,6 +103,7 @@ class _NameScreenState extends State<NameScreen> {
                 const SizedBox(height: 10),
                 Row(
                   children: [
+                    // Male selection button
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () {
@@ -101,7 +115,7 @@ class _NameScreenState extends State<NameScreen> {
                           backgroundColor: _selectedGender == "Male"
                               ? TColor.primary
                               : TColor.primary.withAlpha(153),
-                          minimumSize: const Size(0, 50), // Increased height
+                          minimumSize: const Size(0, 50),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(18),
                           ),
@@ -117,6 +131,7 @@ class _NameScreenState extends State<NameScreen> {
                       ),
                     ),
                     const SizedBox(width: 10),
+                    // Female selection button
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () {
@@ -128,7 +143,7 @@ class _NameScreenState extends State<NameScreen> {
                           backgroundColor: _selectedGender == "Female"
                               ? TColor.primary
                               : TColor.primary.withAlpha(153),
-                          minimumSize: const Size(0, 50), // Increased height
+                          minimumSize: const Size(0, 50),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(18),
                           ),
@@ -146,7 +161,7 @@ class _NameScreenState extends State<NameScreen> {
                   ],
                 ),
                 const SizedBox(height: 40),
-                // The button sends the entered name and selected gender to Firestore when pressed.
+                // Next button to proceed to goal selection
                 RoundButton(
                   title: "NEXT",
                   isPadding: false,
@@ -162,7 +177,7 @@ class _NameScreenState extends State<NameScreen> {
                         return;
                       }
                       try {
-                        // Update the Firestore document for the current user with both the name and gender.
+                        // Update user profile in Firestore
                         await FirebaseFirestore.instance
                             .collection('users')
                             .doc(_auth.currentUser!.uid)
@@ -179,7 +194,7 @@ class _NameScreenState extends State<NameScreen> {
                         );
                         return;
                       }
-                      // Navigate to GoalScreen and pass the entered name.
+                      // Navigate to goal selection screen
                       Navigator.push(
                         context,
                         MaterialPageRoute(

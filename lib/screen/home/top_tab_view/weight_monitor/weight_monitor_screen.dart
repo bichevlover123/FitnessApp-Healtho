@@ -5,6 +5,12 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:healtho_gym/common/color_extension.dart';
 import 'package:intl/intl.dart';
 
+/// Weight monitoring screen for tracking user weight over time
+/// This screen allows users to:
+/// - Enter and save new weight measurements
+/// - View their weight history in a line chart
+/// - See their current weight
+/// The data is stored in Firestore and displayed in a visually appealing chart.
 class WeightMonitorScreen extends StatefulWidget {
   const WeightMonitorScreen({super.key});
 
@@ -13,27 +19,38 @@ class WeightMonitorScreen extends StatefulWidget {
 }
 
 class _WeightMonitorScreenState extends State<WeightMonitorScreen> {
+  /// Controller for weight input field
   final TextEditingController _weightController = TextEditingController();
+
+  /// List to store weight entries fetched from Firestore
   List<WeightEntry> _weightEntries = [];
+
+  /// Form key for validation
   final _formKey = GlobalKey<FormState>();
+
+  /// Current weight of the user
   double _currentWeight = 0;
 
   @override
   void initState() {
     super.initState();
+    // Fetch initial weight data when the screen is initialized
     _fetchInitialData();
   }
 
+  /// Fetch initial weight data from Firestore
   Future<void> _fetchInitialData() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
+    // Get user document
     final userDoc = await FirebaseFirestore.instance
         .collection('users')
         .doc(user.uid)
         .get();
 
     try {
+      // Extract current weight from user document
       final weightString = userDoc.get('weight')?.toString() ?? '0';
       final cleanWeight = weightString.replaceAll(RegExp(r'[^0-9.]'), '');
       _currentWeight = double.tryParse(cleanWeight) ?? 0;
@@ -41,12 +58,14 @@ class _WeightMonitorScreenState extends State<WeightMonitorScreen> {
       _currentWeight = 0;
     }
 
+    // Get weight entries
     final weightEntriesSnapshot = await FirebaseFirestore.instance
         .collection('users')
         .doc(user.uid)
         .collection('weightEntries')
         .get();
 
+    // If no entries exist but current weight is available, create an initial entry
     if (weightEntriesSnapshot.docs.isEmpty && _currentWeight > 0) {
       await FirebaseFirestore.instance
           .collection('users')
@@ -58,13 +77,16 @@ class _WeightMonitorScreenState extends State<WeightMonitorScreen> {
       });
     }
 
+    // Fetch and display weight entries
     await _fetchWeightEntries();
   }
 
+  /// Fetch weight entries from Firestore
   Future<void> _fetchWeightEntries() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
+    // Get weight entries sorted by timestamp
     final snapshot = await FirebaseFirestore.instance
         .collection('users')
         .doc(user.uid)
@@ -73,6 +95,7 @@ class _WeightMonitorScreenState extends State<WeightMonitorScreen> {
         .get();
 
     setState(() {
+      // Convert snapshot documents to WeightEntry objects
       _weightEntries = snapshot.docs.map((doc) {
         return WeightEntry(
           weight: doc['weight'].toDouble(),
@@ -80,22 +103,26 @@ class _WeightMonitorScreenState extends State<WeightMonitorScreen> {
         );
       }).toList();
 
+      // Update current weight if entries exist
       if (_weightEntries.isNotEmpty) {
         _currentWeight = _weightEntries.last.weight;
       }
     });
   }
 
+  /// Save new weight entry to Firestore
   Future<void> _saveWeight() async {
     if (!_formKey.currentState!.validate()) return;
 
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
+    // Parse weight from input
     final weight = double.tryParse(_weightController.text);
     if (weight == null) return;
 
     try {
+      // Add new weight entry
       await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
@@ -105,14 +132,17 @@ class _WeightMonitorScreenState extends State<WeightMonitorScreen> {
         'timestamp': Timestamp.now(),
       });
 
+      // Update user document with current weight
       await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
           .update({'weight': '$weight KG'});
 
+      // Clear input field and refresh data
       _weightController.clear();
       await _fetchWeightEntries();
     } catch (e) {
+      // Show error message if save fails
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error saving weight: ${e.toString()}')),
       );
@@ -126,8 +156,10 @@ class _WeightMonitorScreenState extends State<WeightMonitorScreen> {
         padding: const EdgeInsets.all(20.0),
         child: Column(
           children: [
+            // Weight input form
             _buildInputForm(),
             const SizedBox(height: 30),
+            // Weight chart or empty state
             Expanded(
               child: _weightEntries.isEmpty
                   ? _buildEmptyState()
@@ -139,8 +171,10 @@ class _WeightMonitorScreenState extends State<WeightMonitorScreen> {
     );
   }
 
+  /// Build empty state widget when no weight data is available
   Widget _buildEmptyState() {
     if (_currentWeight > 0) {
+      // Show chart with current weight if available
       return _buildWeightChart([
         WeightEntry(
             weight: _currentWeight,
@@ -148,11 +182,13 @@ class _WeightMonitorScreenState extends State<WeightMonitorScreen> {
         )
       ]);
     }
+    // Show message prompting user to start tracking
     return const Center(
       child: Text('No weight data available. Start tracking!'),
     );
   }
 
+  /// Build weight chart widget
   Widget _buildWeightChart([List<WeightEntry>? customEntries]) {
     final displayEntries = customEntries ?? _weightEntries;
 
@@ -244,18 +280,21 @@ class _WeightMonitorScreenState extends State<WeightMonitorScreen> {
     );
   }
 
+  /// Calculate minimum weight for chart Y-axis
   double _getMinWeight(List<WeightEntry> entries) {
     if (entries.isEmpty) return 0;
     final min = entries.map((e) => e.weight).reduce((a, b) => a < b ? a : b);
     return (min - 5).clamp(0, double.infinity);
   }
 
+  /// Calculate maximum weight for chart Y-axis
   double _getMaxWeight(List<WeightEntry> entries) {
     if (entries.isEmpty) return 100;
     final max = entries.map((e) => e.weight).reduce((a, b) => a > b ? a : b);
     return max + 5;
   }
 
+  /// Configure bottom titles for chart
   SideTitles _bottomTitles(List<WeightEntry> entries) => SideTitles(
     showTitles: true,
     interval: 1,
@@ -276,6 +315,7 @@ class _WeightMonitorScreenState extends State<WeightMonitorScreen> {
     },
   );
 
+  /// Configure left titles for chart
   SideTitles _leftTitles() => SideTitles(
     showTitles: true,
     interval: 5,
@@ -291,6 +331,7 @@ class _WeightMonitorScreenState extends State<WeightMonitorScreen> {
     },
   );
 
+  /// Build weight input form
   Widget _buildInputForm() {
     return Form(
       key: _formKey,
@@ -317,7 +358,6 @@ class _WeightMonitorScreenState extends State<WeightMonitorScreen> {
                 decoration: const InputDecoration(
                   labelText: 'Enter Weight (KG)',
                   border: InputBorder.none,
-                  // Removed prefixIcon
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) return 'Please enter weight';
@@ -348,6 +388,7 @@ class _WeightMonitorScreenState extends State<WeightMonitorScreen> {
   }
 }
 
+/// Data model for weight entries
 class WeightEntry {
   final double weight;
   final DateTime timestamp;

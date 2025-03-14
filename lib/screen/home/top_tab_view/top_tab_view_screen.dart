@@ -9,6 +9,18 @@ import 'package:healtho_gym/screen/home/top_tab_view/weight_monitor/weight_monit
 import 'package:healtho_gym/screen/home/top_tab_view/workout_plan/workout_plan_screen.dart';
 import 'package:healtho_gym/screen/home/setting/profile_screen.dart';
 
+/// Configuration for each tab in the top tab view
+class TabConfig {
+  /// Title displayed for the tab
+  final String title;
+
+  /// Screen widget associated with the tab
+  final Widget screen;
+
+  const TabConfig(this.title, this.screen);
+}
+
+/// Main screen with top tabs for different fitness sections
 class TopTabViewScreen extends StatefulWidget {
   const TopTabViewScreen({super.key});
 
@@ -18,129 +30,155 @@ class TopTabViewScreen extends StatefulWidget {
 
 class _TopTabViewScreenState extends State<TopTabViewScreen>
     with SingleTickerProviderStateMixin {
-  final List<String> tapArr = [
-    "Health Tips",
-    "Exercises",
-    "Workout Plan",
-    "Weight Monitor"
+  /// List of tab configurations
+  static const List<TabConfig> _tabConfigs = [
+    TabConfig("Health Tips",  HealthTipScreen()),
+    TabConfig("Exercises",  ExercisesScreen()),
+    TabConfig("Workout Plan",  WorkoutPlanScreen()),
+    TabConfig("Weight Monitor",  WeightMonitorScreen()),
   ];
 
-  int selectTab = 0;
-  TabController? controller;
-  String userName = "User"; // Default name if not available
+  /// Tab controller for managing the tab selection
+  late final TabController _tabController;
+
+  /// Currently selected tab index
+  int _selectedTabIndex = 0;
+
+  /// Current user name (default: "User")
+  String _userName = "User";
 
   @override
   void initState() {
     super.initState();
-    controller = TabController(length: tapArr.length, vsync: this);
-    controller?.addListener(() {
-      setState(() {
-        selectTab = controller?.index.round() ?? 0;
-      });
-    });
+    // Initialize tab controller
+    _tabController = TabController(
+      length: _tabConfigs.length,
+      vsync: this,
+    )..addListener(_handleTabChange);
+    // Fetch user name from Firestore
     _fetchUserName();
   }
 
+  @override
+  void dispose() {
+    // Clean up tab controller listener and dispose controller
+    _tabController.removeListener(_handleTabChange);
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  /// Handle tab changes when user swipes
+  void _handleTabChange() {
+    if (_tabController.index != _selectedTabIndex) {
+      setState(() => _selectedTabIndex = _tabController.index);
+    }
+  }
+
+  /// Fetch user name from Firestore
   Future<void> _fetchUserName() async {
-    final currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser != null) {
-      try {
-        final doc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(currentUser.uid)
-            .get();
-        if (doc.exists && doc.data() != null) {
-          setState(() {
-            userName = doc.get("name") ?? "User";
-          });
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      if (doc.exists) {
+        final name = doc.get("name") as String?;
+        if (name?.isNotEmpty ?? false) {
+          setState(() => _userName = name!);
         }
-      } catch (e) {
-        debugPrint("Error fetching user name: $e");
       }
+    } catch (e) {
+      debugPrint("Error fetching user name: $e");
+    }
+  }
+
+  /// Handle tab button press
+  void _onTabPressed(int index) {
+    if (index != _selectedTabIndex) {
+      setState(() {
+        _selectedTabIndex = index;
+        _tabController.animateTo(index);
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: TColor.secondary,
-        automaticallyImplyLeading: false,
-        centerTitle: false,
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(left: 20), // Add right-side spacing
-              child: Text(
-                "Hello, $userName!",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 22, // Increased from 18
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.settings, color: Colors.white),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ProfileScreen(),
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
+      appBar: _buildAppBar(),
       body: Column(
         children: [
-          // Top Tab Bar with increased height and padding.
-          Container(
-            margin: const EdgeInsets.only(top: 0.5),
-            color: TColor.secondary,
-            height: 60,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  children: tapArr.asMap().entries.map((entry) {
-                    int index = entry.key;
-                    String name = entry.value;
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                      child: TopTabButton(
-                        title: name,
-                        isSelect: selectTab == index,
-                        onPressed: () {
-                          setState(() {
-                            selectTab = index;
-                            controller?.animateTo(index);
-                          });
-                        },
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-            ),
-          ),
-          // TabBarView displays the tab content.
+          _buildTabBar(),
           Expanded(
             child: TabBarView(
-              controller: controller,
-              children: const [
-                HealthTipScreen(),
-                ExercisesScreen(),
-                WorkoutPlanScreen(),
-                WeightMonitorScreen(),
-              ],
+              controller: _tabController,
+              children: _tabConfigs.map((config) => config.screen).toList(),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Build the app bar with user greeting and settings button
+  AppBar _buildAppBar() {
+    return AppBar(
+      backgroundColor: TColor.secondary,
+      automaticallyImplyLeading: false,
+      title: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 20),
+            child: Text(
+              "Hello, $_userName!",
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings, color: Colors.white),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const ProfileScreen(),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Build the top tab bar with custom buttons
+  Widget _buildTabBar() {
+    return Container(
+      margin: const EdgeInsets.only(top: 0.5),
+      color: TColor.secondary,
+      height: 60,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Row(
+          children: _tabConfigs.asMap().entries.map((entry) {
+            final index = entry.key;
+            final config = entry.value;
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: TopTabButton(
+                title: config.title,
+                isSelect: _selectedTabIndex == index,
+                onPressed: () => _onTabPressed(index),
+              ),
+            );
+          }).toList(),
+        ),
       ),
     );
   }

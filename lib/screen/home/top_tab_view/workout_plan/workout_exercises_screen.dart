@@ -1,11 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:healtho_gym/common/color_extension.dart';
 
+/// Detailed screen for displaying workout exercise information
+/// This screen shows comprehensive details about a specific exercise including:
+/// - Image carousel of exercise demonstration
+/// - Step-by-step execution instructions
+/// - Required equipment
+/// - Targeted muscle groups
 class WorkoutExercisesDetailScreen extends StatefulWidget {
+  /// Title of the exercise
   final String title;
+
+  /// List of execution steps for the exercise
   final List<String> descriptionSteps;
+
+  /// Equipment required for the exercise
   final String equipment;
+
+  /// Muscle groups targeted by the exercise
   final String targetMuscles;
+
+  /// List of image paths for the exercise demonstration
   final List<String> detailImages;
 
   const WorkoutExercisesDetailScreen({
@@ -24,12 +39,16 @@ class WorkoutExercisesDetailScreen extends StatefulWidget {
 
 class _WorkoutExercisesDetailScreenState
     extends State<WorkoutExercisesDetailScreen> {
+  /// Controller for the image carousel
   PageController pageController = PageController();
+
+  /// Current page index in the image carousel
   int currentPage = 0;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // App bar configuration
       appBar: AppBar(
         backgroundColor: TColor.secondary,
         centerTitle: false,
@@ -42,15 +61,17 @@ class _WorkoutExercisesDetailScreenState
           ),
         ),
       ),
+      // Main content area
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image Carousel with Indicator
+            // Image carousel section with page indicator
             SizedBox(
               height: context.width * 0.8,
               child: Stack(
                 children: [
+                  // Page view for image carousel
                   PageView.builder(
                     controller: pageController,
                     itemCount: widget.detailImages.length,
@@ -67,6 +88,7 @@ class _WorkoutExercisesDetailScreenState
                       );
                     },
                   ),
+                  // Page indicator dots if multiple images
                   if (widget.detailImages.length > 1)
                     Positioned(
                       bottom: 20,
@@ -93,13 +115,13 @@ class _WorkoutExercisesDetailScreenState
               ),
             ),
 
-            // Content Section
+            // Content section with exercise details
             Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Exercise Title
+                  // Exercise title
                   Text(
                     widget.title,
                     style: TextStyle(
@@ -110,7 +132,7 @@ class _WorkoutExercisesDetailScreenState
                   ),
                   const SizedBox(height: 20),
 
-                  // Instructions Header
+                  // Execution steps header
                   Text(
                     "Execution Steps",
                     style: TextStyle(
@@ -121,12 +143,13 @@ class _WorkoutExercisesDetailScreenState
                   ),
                   const SizedBox(height: 12),
 
-                  // Step-by-Step Instructions
+                  // Step-by-step instructions
                   ...widget.descriptionSteps.map((step) => Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Step number indicator
                         Container(
                           width: 24,
                           height: 24,
@@ -145,6 +168,7 @@ class _WorkoutExercisesDetailScreenState
                           ),
                         ),
                         const SizedBox(width: 12),
+                        // Step description
                         Expanded(
                           child: Text(
                             step,
@@ -161,7 +185,7 @@ class _WorkoutExercisesDetailScreenState
 
                   const SizedBox(height: 24),
 
-                  // Equipment Section
+                  // Equipment information card
                   _buildInfoCard(
                     title: "Equipment Required",
                     content: widget.equipment,
@@ -170,7 +194,7 @@ class _WorkoutExercisesDetailScreenState
 
                   const SizedBox(height: 16),
 
-                  // Target Muscles Section
+                  // Target muscles information card
                   _buildInfoCard(
                     title: "Target Muscles",
                     content: widget.targetMuscles,
@@ -185,6 +209,8 @@ class _WorkoutExercisesDetailScreenState
     );
   }
 
+  /// Build reusable information card widget
+  /// This widget displays a title, content, and icon in a card layout
   Widget _buildInfoCard({required String title, required String content, required IconData icon}) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -201,6 +227,7 @@ class _WorkoutExercisesDetailScreenState
       ),
       child: Row(
         children: [
+          // Icon container
           Container(
             width: 40,
             height: 40,
@@ -211,10 +238,12 @@ class _WorkoutExercisesDetailScreenState
             child: Icon(icon, color: TColor.primary),
           ),
           const SizedBox(width: 16),
+          // Content section
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Title text
                 Text(
                   title,
                   style: TextStyle(
@@ -224,6 +253,7 @@ class _WorkoutExercisesDetailScreenState
                   ),
                 ),
                 const SizedBox(height: 4),
+                // Content text
                 Text(
                   content,
                   style: TextStyle(

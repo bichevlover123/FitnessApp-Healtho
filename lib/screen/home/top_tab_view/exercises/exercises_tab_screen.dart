@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:healtho_gym/screen/home/top_tab_view/exercises/exercises_cell.dart';
 import 'package:healtho_gym/screen/home/top_tab_view/exercises/exercises_name_screen.dart';
 
+/// Main exercises screen displaying all muscle groups
+/// This screen presents a grid of exercise categories (muscle groups)
+/// that users can select to view specific exercises.
 class ExercisesScreen extends StatefulWidget {
   const ExercisesScreen({super.key});
 
@@ -10,6 +13,11 @@ class ExercisesScreen extends StatefulWidget {
 }
 
 class _ExercisesScreenState extends State<ExercisesScreen> {
+  /// List of exercise categories with their details
+  /// Each category contains:
+  /// - title: Name of the muscle group
+  /// - subtitle: Number of exercises in the category
+  /// - image: Path to the category image
   final List listArr = [
     {
       "title": "Chest",
@@ -62,22 +70,23 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
           physics: const BouncingScrollPhysics(),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 1,
-              crossAxisSpacing: 15,
-              mainAxisSpacing: 15),
+              crossAxisCount: 2, // Two columns in the grid
+              childAspectRatio: 1, // Square items
+              crossAxisSpacing: 15, // Spacing between columns
+              mainAxisSpacing: 15), // Spacing between rows
           itemCount: listArr.length,
           itemBuilder: (context, index) {
             final Map obj = listArr[index];
             return ExercisesCell(
               obj: obj,
               onPressed: () {
+                // Navigate to detailed exercises screen for the selected category
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => ExercisesNameScreen(
-                      muscleGroupIndex: index,
-                      groupTitle: obj["title"],
+                      muscleGroupIndex: index, // Pass the index of the category
+                      groupTitle: obj["title"], // Pass the title of the category
                     ),
                   ),
                 );

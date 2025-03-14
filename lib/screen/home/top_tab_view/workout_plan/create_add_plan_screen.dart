@@ -6,6 +6,13 @@ import 'package:healtho_gym/common/color_extension.dart';
 import 'package:healtho_gym/common_widget/round_button.dart';
 import 'package:healtho_gym/common_widget/round_text_field.dart';
 
+/// Screen for creating new workout plans
+/// This screen allows users to input details for a new workout plan including:
+/// - Plan name
+/// - Goal
+/// - Duration
+/// - Workout split
+/// The data is saved locally using SharedPreferences.
 class CreateNewPlanScreen extends StatefulWidget {
   const CreateNewPlanScreen({super.key});
 
@@ -14,17 +21,26 @@ class CreateNewPlanScreen extends StatefulWidget {
 }
 
 class _CreateNewPlanScreenState extends State<CreateNewPlanScreen> {
+  /// Controller for plan name input
   final TextEditingController _planNameController = TextEditingController();
+
+  /// Controller for duration input
   final TextEditingController _durationController = TextEditingController();
+
+  /// Currently selected goal
   String? _selectedGoal;
+
+  /// Currently selected workout split
   String? _selectedSplit;
 
+  /// Available goal options
   final List<Map<String, String>> _goalOptions = [
     {"name": "Losing Weight", "value": "losing_weight"},
     {"name": "Gain Muscle Mass", "value": "muscle_gain"},
     {"name": "Fat Loss", "value": "fat_loss"},
   ];
 
+  /// Available workout split options
   final List<Map<String, String>> _splitOptions = [
     {"name": "Push pull legs 2x week", "value": "push_pull_legs_2x_week"},
     {"name": "Push pull legs 1x week", "value": "push_pull_legs_1x_week"},
@@ -32,6 +48,7 @@ class _CreateNewPlanScreenState extends State<CreateNewPlanScreen> {
     {"name": "Fullbody 3x week", "value": "fullbody_3x_week"},
   ];
 
+  /// Save the new workout plan to SharedPreferences
   Future<void> _savePlan(Map<String, dynamic> newPlan) async {
     final prefs = await SharedPreferences.getInstance();
     final existingPlans = prefs.getStringList('workoutPlans') ?? [];
@@ -39,11 +56,14 @@ class _CreateNewPlanScreenState extends State<CreateNewPlanScreen> {
     await prefs.setStringList('workoutPlans', existingPlans);
   }
 
+  /// Add a new workout plan after validation
   void _addPlan() async {
+    // Validate all fields are filled
     if (_planNameController.text.isEmpty ||
         _durationController.text.isEmpty ||
         _selectedGoal == null ||
         _selectedSplit == null) {
+      // Show error dialog if any field is missing
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -61,6 +81,7 @@ class _CreateNewPlanScreenState extends State<CreateNewPlanScreen> {
     }
 
     try {
+      // Create new plan object
       final newPlan = {
         'name': _planNameController.text,
         'goal': _selectedGoal!,
@@ -68,13 +89,15 @@ class _CreateNewPlanScreenState extends State<CreateNewPlanScreen> {
         'split': _selectedSplit!,
       };
 
+      // Save the plan
       await _savePlan(newPlan);
-      if (mounted) Navigator.pop(context, true);
 
+      // Navigate back to previous screen
       if (mounted) {
         Navigator.pop(context, true); // Pass success flag
       }
     } catch (e) {
+      // Show error message if save fails
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to save plan: ${e.toString()}')),
@@ -86,7 +109,9 @@ class _CreateNewPlanScreenState extends State<CreateNewPlanScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // App bar configuration
       appBar: AppBar(
+        // Back button with custom styling
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
           icon: Image.asset(
@@ -96,17 +121,21 @@ class _CreateNewPlanScreenState extends State<CreateNewPlanScreen> {
             color: Colors.white,
           ),
         ),
+        // App bar background color
         backgroundColor: TColor.secondary,
+        // Title configuration
         centerTitle: false,
         title: const Text(
           "Add Plan",
           style: TextStyle(color: Colors.white, fontSize: 18),
         ),
       ),
+      // Main content area
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
         child: Column(
           children: [
+            // Plan name input field
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 15),
               child: RoundTextField(
@@ -115,6 +144,7 @@ class _CreateNewPlanScreenState extends State<CreateNewPlanScreen> {
                 radius: 10,
               ),
             ),
+            // Goal selection dropdown
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 15),
               child: RoundDropDown(
@@ -124,6 +154,7 @@ class _CreateNewPlanScreenState extends State<CreateNewPlanScreen> {
                 didChange: (value) => setState(() => _selectedGoal = value['value']),
               ),
             ),
+            // Duration input field
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 15),
               child: RoundTextField(
@@ -135,8 +166,9 @@ class _CreateNewPlanScreenState extends State<CreateNewPlanScreen> {
                   FilteringTextInputFormatter.digitsOnly, // Allow only numbers
                   LengthLimitingTextInputFormatter(2), // Max 2 digits
                 ],
-              )
+              ),
             ),
+            // Split selection dropdown
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 15),
               child: RoundDropDown(
@@ -147,6 +179,7 @@ class _CreateNewPlanScreenState extends State<CreateNewPlanScreen> {
               ),
             ),
             const SizedBox(height: 30),
+            // Create plan button
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: RoundButton(
@@ -164,16 +197,27 @@ class _CreateNewPlanScreenState extends State<CreateNewPlanScreen> {
 
   @override
   void dispose() {
+    // Dispose controllers to free resources
     _planNameController.dispose();
     _durationController.dispose();
     super.dispose();
   }
 }
 
+/// Custom dropdown button with rounded design
+/// This widget creates a dropdown button with rounded corners and
+/// proper styling consistent with the app's design language.
 class RoundDropDown extends StatelessWidget {
+  /// Hint text displayed when no option is selected
   final String hintText;
+
+  /// List of options for the dropdown
   final List<Map<String, String>> list;
+
+  /// Currently selected value
   final String? selectedValue;
+
+  /// Callback when selection changes
   final Function(Map<String, String>) didChange;
 
   const RoundDropDown({
@@ -189,16 +233,18 @@ class RoundDropDown extends StatelessWidget {
     return Container(
       height: 50,
       decoration: BoxDecoration(
-        color: TColor.txtBG,
-        border: Border.all(color: TColor.board),
-        borderRadius: BorderRadius.circular(10),
+        color: TColor.txtBG, // Background color
+        border: Border.all(color: TColor.board), // Border styling
+        borderRadius: BorderRadius.circular(10), // Rounded corners
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<Map<String, String>>(
           isExpanded: true,
+          // Determine currently selected value
           value: selectedValue != null
               ? list.firstWhere((e) => e['value'] == selectedValue)
               : null,
+          // Hint text when no option is selected
           hint: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 15),
             child: Text(
@@ -206,21 +252,23 @@ class RoundDropDown extends StatelessWidget {
                   ? list.firstWhere((e) => e['value'] == selectedValue)['name']!
                   : hintText,
               style: TextStyle(
-                color: TColor.secondaryText,
+                color: TColor.secondaryText, // Text color
                 fontSize: 15,
               ),
             ),
           ),
+          // Dropdown menu items
           items: list.map((item) => DropdownMenuItem(
             value: item,
             child: Text(
               item['name']!,
               style: TextStyle(
-                color: TColor.primaryText,
+                color: TColor.primaryText, // Text color
                 fontSize: 15,
               ),
             ),
           )).toList(),
+          // Callback when selection changes
           onChanged: (value) => didChange(value!),
         ),
       ),

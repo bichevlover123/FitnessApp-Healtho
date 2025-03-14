@@ -3,6 +3,10 @@ import 'package:healtho_gym/common/color_extension.dart';
 import 'package:healtho_gym/common_widget/round_button.dart';
 import 'package:healtho_gym/screen/login/sign_up_screen.dart';
 
+/// Onboarding screen displaying introductory information
+/// This screen presents a series of pages with information about the app's features.
+/// Users can swipe between pages or use the "Next" button to navigate.
+/// The final page has a button to proceed to the sign-up screen.
 class OnBoardingScreen extends StatefulWidget {
   const OnBoardingScreen({super.key});
 
@@ -11,9 +15,13 @@ class OnBoardingScreen extends StatefulWidget {
 }
 
 class _OnBoardingScreenState extends State<OnBoardingScreen> {
+  /// Current page index in the onboarding sequence
   int selectPage = 0;
+
+  /// Controller for page view navigation
   PageController controller = PageController();
 
+  /// List of onboarding pages with their content
   List pageArr = [
     {
       "title": "Exercises",
@@ -36,6 +44,7 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
   void initState() {
     super.initState();
 
+    // Update page index when user swipes
     controller.addListener(() {
       setState(() {
         selectPage = controller.page?.round() ?? 0;
@@ -46,6 +55,7 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // App bar with skip button
       appBar: AppBar(
         actions: [
           Container(
@@ -57,14 +67,19 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
               width: 70,
               fontWeight: FontWeight.w300,
               type: RoundButtonType.line,
-              onPressed: () {},
+              onPressed: () {
+                // Navigate directly to sign-up screen when skipped
+                context.push(const SignUpScreen());
+              },
             ),
           ),
         ],
       ),
+      // Main content with page view and navigation elements
       body: Stack(
         alignment: Alignment.center,
         children: [
+          // Page view containing onboarding content
           PageView.builder(
             controller: controller,
             itemCount: pageArr.length,
@@ -76,6 +91,7 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Spacer(),
+                  // Page title
                   Text(
                     pObj["title"].toString(),
                     textAlign: TextAlign.center,
@@ -85,6 +101,7 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
+                  // Page subtitle
                   Text(
                     pObj["subtitle"].toString(),
                     textAlign: TextAlign.center,
@@ -93,6 +110,7 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
                       fontSize: 15,
                     ),
                   ),
+                  // Page image
                   Container(
                     width: MediaQuery.of(context).size.width,
                     height: MediaQuery.of(context).size.width,
@@ -110,12 +128,14 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
               );
             },
           ),
+          // Safe area for bottom navigation elements
           SafeArea(
             child: Column(
               children: [
                 const Spacer(
                   flex: 5,
                 ),
+                // Page indicator dots
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: pageArr.map((e) {
@@ -135,13 +155,16 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
                   }).toList(),
                 ),
                 const Spacer(),
+                // Next button
                 RoundButton(
                   title: "Next",
                   width: 150,
                   onPressed: () {
                     if (selectPage >= 2) {
+                      // Navigate to sign-up screen on last page
                       context.push(const SignUpScreen());
                     } else {
+                      // Move to next page
                       selectPage = selectPage + 1;
                       controller.animateToPage(
                         selectPage,

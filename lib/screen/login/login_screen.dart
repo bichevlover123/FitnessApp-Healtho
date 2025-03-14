@@ -8,6 +8,13 @@ import 'package:healtho_gym/screen/home/top_tab_view/top_tab_view_screen.dart';
 import 'package:healtho_gym/screen/login/name_screen.dart';
 import 'package:healtho_gym/screen/login/sign_up_screen.dart';
 
+/// Login screen for user authentication
+/// This screen allows users to:
+/// - Enter their email and password
+/// - Remember login credentials
+/// - Reset forgotten passwords
+/// - Navigate to sign up screen
+/// - Log in and navigate to the main app
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -16,23 +23,37 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  /// Form key for validation
   final _formKey = GlobalKey<FormState>();
+
+  /// Controllers for email and password input fields
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+
+  /// Password visibility toggle
   bool _obscurePassword = true;
+
+  /// Loading state indicator
   bool _isLoading = false;
+
+  /// Remember me checkbox state
   bool _rememberMe = false;
+
+  /// Shared preferences instance
   late SharedPreferences _prefs;
 
+  /// Firebase services
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   @override
   void initState() {
     super.initState();
+    // Initialize app and load preferences
     _initializeApp();
   }
 
+  /// Initialize app preferences and attempt auto-login if applicable
   Future<void> _initializeApp() async {
     try {
       _prefs = await SharedPreferences.getInstance();
@@ -43,10 +64,12 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  /// Load remember me preference from shared preferences
   Future<void> _loadRememberMePreference() async {
     setState(() => _rememberMe = _prefs.getBool('remember_me') ?? false);
   }
 
+  /// Attempt automatic login if remember me is enabled
   Future<void> _attemptAutoLogin() async {
     try {
       final user = _auth.currentUser;
@@ -55,6 +78,7 @@ class _LoginScreenState extends State<LoginScreen> {
       final profileComplete = await _isProfileComplete(user.uid);
       if (!mounted) return;
 
+      // Navigate to appropriate screen based on profile completion
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -69,6 +93,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  /// Check if user profile is complete
   Future<bool> _isProfileComplete(String userId) async {
     try {
       final doc = await _firestore.collection('users').doc(userId).get();
@@ -85,6 +110,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  /// Perform login with email and password
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -101,10 +127,14 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
+      // Save remember me preference
       await _prefs.setBool('remember_me', _rememberMe);
+
+      // Check if profile is complete
       final profileComplete = await _isProfileComplete(userCredential.user!.uid);
 
       if (!mounted) return;
+      // Navigate to appropriate screen
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -114,9 +144,11 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       );
     } on FirebaseAuthException catch (e) {
+      // Handle authentication errors
       await _prefs.setBool('remember_me', false);
       _showErrorMessage(e.message ?? 'Authentication failed');
     } catch (e) {
+      // Handle other errors
       await _prefs.setBool('remember_me', false);
       _showErrorMessage('Unexpected error occurred');
     } finally {
@@ -124,7 +156,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // Keep all existing methods below exactly as they were
+  /// Send password reset email
   Future<void> _sendPasswordResetEmail(String email) async {
     try {
       await _auth.sendPasswordResetEmail(email: email.trim());
@@ -136,6 +168,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  /// Show forgot password dialog
   void _showForgotPasswordDialog() {
     final TextEditingController emailController = TextEditingController();
     bool isLoading = false;
@@ -230,6 +263,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  /// Show error message snackbar
   void _showErrorMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -239,6 +273,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  /// Show success message snackbar
   void _showSuccessMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -256,50 +291,61 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Form(
           key: _formKey,
           child: Column(
-              children: [
+            children: [
               const Spacer(),
-          Image.asset(
-            "assets/img/app_logo.png",
-            width: MediaQuery.of(context).size.width * 0.7,
-          ),
-          const SizedBox(height: 40),
-                TextFormField(
-                  controller: _emailController,
-                  decoration: InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: Icon(Icons.email, color: TColor.primary),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(18),
-                    ),
+              // App logo
+              Image.asset(
+                "assets/img/app_logo.png",
+                width: MediaQuery.of(context).size.width * 0.7,
+              ),
+              const SizedBox(height: 40),
+              // Email input field
+              TextFormField(
+                controller: _emailController,
+                decoration: InputDecoration(
+                  labelText: 'Email',
+                  prefixIcon: Icon(Icons.email, color: TColor.primary),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
                   ),
-                  keyboardType: TextInputType.emailAddress,
-                  validator: _validateEmail, // Direct reference to the method
                 ),
-                const SizedBox(height: 20),
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: _obscurePassword,
-                  decoration: InputDecoration(
-                      labelText: 'Password',
-                      prefixIcon: Icon(Icons.lock, color: TColor.primary),
-                      suffixIcon: IconButton(
-                          icon: Icon(
-                              _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                              color: TColor.primary),
-                          onPressed: () => setState(() => _obscurePassword = !_obscurePassword)),
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(18))),
-                  validator: (value) => _validatePassword(value),
+                keyboardType: TextInputType.emailAddress,
+                validator: _validateEmail,
+              ),
+              const SizedBox(height: 20),
+              // Password input field
+              TextFormField(
+                controller: _passwordController,
+                obscureText: _obscurePassword,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  prefixIcon: Icon(Icons.lock, color: TColor.primary),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                      color: TColor.primary,
+                    ),
+                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
                 ),
-            const SizedBox(height: 15),
-            _buildRememberMeCheckbox(),
-            const SizedBox(height: 15),
-            _buildForgotPasswordButton(),
-            const SizedBox(height: 15),
-            _buildLoginButton(),
-            const SizedBox(height: 20),
-            _buildSignUpLink(),
-            const Spacer(),
+                validator: (value) => _validatePassword(value),
+              ),
+              const SizedBox(height: 15),
+              // Remember me checkbox
+              _buildRememberMeCheckbox(),
+              const SizedBox(height: 15),
+              // Forgot password button
+              _buildForgotPasswordButton(),
+              const SizedBox(height: 15),
+              // Login button
+              _buildLoginButton(),
+              const SizedBox(height: 20),
+              // Sign up link
+              _buildSignUpLink(),
+              const Spacer(),
             ],
           ),
         ),
@@ -307,6 +353,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  /// Build remember me checkbox
   Widget _buildRememberMeCheckbox() {
     return Row(
       children: [
@@ -320,6 +367,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  /// Validate email format
   String? _validateEmail(String? value) {
     if (value == null || value.isEmpty) return 'Email required';
     if (!RegExp(r'^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$').hasMatch(value)) {
@@ -328,6 +376,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return null;
   }
 
+  /// Validate password strength
   String? _validatePassword(String? value) {
     if (value == null || value.isEmpty) {
       return 'Please enter your password';
@@ -338,21 +387,25 @@ class _LoginScreenState extends State<LoginScreen> {
     return null;
   }
 
+  /// Build forgot password button
   Widget _buildForgotPasswordButton() {
     return Align(
       alignment: Alignment.centerRight,
       child: TextButton(
         onPressed: _showForgotPasswordDialog,
         child: Text(
-            'Forgot Password?',
-            style: TextStyle(
-                color: TColor.primary,
-                fontWeight: FontWeight.w600,
-                fontSize: 14)),
+          'Forgot Password?',
+          style: TextStyle(
+            color: TColor.primary,
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+          ),
+        ),
       ),
     );
   }
 
+  /// Build login button
   Widget _buildLoginButton() {
     return _isLoading
         ? const CircularProgressIndicator()
@@ -369,21 +422,25 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  /// Build sign up link
   Widget _buildSignUpLink() {
     return TextButton(
       onPressed: () => Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const SignUpScreen())),
+        context,
+        MaterialPageRoute(builder: (context) => const SignUpScreen()),
+      ),
       child: Text.rich(
         TextSpan(
           text: 'Don\'t have an account? ',
           style: TextStyle(color: TColor.primaryText),
           children: [
             TextSpan(
-                text: 'Sign Up',
-                style: TextStyle(
-                    color: TColor.primary,
-                    fontWeight: FontWeight.bold)),
+              text: 'Sign Up',
+              style: TextStyle(
+                color: TColor.primary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ],
         ),
       ),

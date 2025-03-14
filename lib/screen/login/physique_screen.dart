@@ -4,14 +4,24 @@ import 'package:healtho_gym/common_widget/round_button.dart';
 import 'package:healtho_gym/common_widget/round_title_value_button.dart';
 import 'package:healtho_gym/screen/home/top_tab_view/top_tab_view_screen.dart';
 import 'package:healtho_gym/screen/login/select_age_screen.dart';
-import 'package:healtho_gym/screen/login/select_height_screen.dart'; // Updated widget
+import 'package:healtho_gym/screen/login/select_height_screen.dart';
 import 'package:healtho_gym/screen/login/select_level_screen.dart';
 import 'package:healtho_gym/screen/login/select_weight_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+/// Screen for collecting user physique details
+/// This screen allows users to input their:
+/// - Age
+/// - Height
+/// - Weight
+/// - Fitness level
+/// The data is saved to Firestore and used throughout the app.
 class PhysiqueScreen extends StatefulWidget {
+  /// User's name passed from previous screen
   final String userName;
+
+  /// User's selected goal passed from previous screen
   final String userGoal;
 
   const PhysiqueScreen({
@@ -25,9 +35,16 @@ class PhysiqueScreen extends StatefulWidget {
 }
 
 class _PhysiqueScreenState extends State<PhysiqueScreen> {
-  String selectAge = "19"; // default value in years
-  String selectHeight = "170 cm"; // default in centimeters
+  /// Currently selected age (default: 19 years)
+  String selectAge = "19";
+
+  /// Currently selected height (default: 170 cm)
+  String selectHeight = "170 cm";
+
+  /// Currently selected weight (default: 78 KG)
   String selectWeight = "78 KG";
+
+  /// Currently selected fitness level (default: Beginner)
   String selectLevel = "Beginner";
 
   @override
@@ -39,7 +56,7 @@ class _PhysiqueScreenState extends State<PhysiqueScreen> {
           child: Column(
             children: [
               const SizedBox(height: 20),
-              // Display the user's name and selected goal
+              // Display user's name and goal
               Text(
                 "Hello ${widget.userName}!",
                 style: TextStyle(
@@ -67,11 +84,12 @@ class _PhysiqueScreenState extends State<PhysiqueScreen> {
                 ),
               ),
               const SizedBox(height: 40),
-              // Button to select Age
+              // Age selection button
               RoundTitleValueButton(
                 title: "Age",
                 value: "$selectAge Yrs",
                 onPressed: () {
+                  // Show age selection bottom sheet
                   showModalBottomSheet(
                     backgroundColor: Colors.transparent,
                     elevation: 0,
@@ -87,11 +105,12 @@ class _PhysiqueScreenState extends State<PhysiqueScreen> {
                   );
                 },
               ),
-              // Button to select Height in cm, with our updated selector.
+              // Height selection button
               RoundTitleValueButton(
                 title: "Height",
                 value: selectHeight,
                 onPressed: () {
+                  // Show height selection bottom sheet
                   showModalBottomSheet(
                     backgroundColor: Colors.transparent,
                     elevation: 0,
@@ -99,7 +118,7 @@ class _PhysiqueScreenState extends State<PhysiqueScreen> {
                     context: context,
                     builder: (context) {
                       return SelectHeightScreen(didChange: (val) {
-                        // Now the value returned is in centimeters.
+                        // Update height with new value in centimeters
                         setState(() {
                           selectHeight = "$val cm";
                         });
@@ -108,11 +127,12 @@ class _PhysiqueScreenState extends State<PhysiqueScreen> {
                   );
                 },
               ),
-              // Button to select Weight
+              // Weight selection button
               RoundTitleValueButton(
                 title: "Weight",
                 value: selectWeight,
                 onPressed: () {
+                  // Show weight selection bottom sheet
                   showModalBottomSheet(
                     backgroundColor: Colors.transparent,
                     elevation: 0,
@@ -128,11 +148,12 @@ class _PhysiqueScreenState extends State<PhysiqueScreen> {
                   );
                 },
               ),
-              // Button to select Level
+              // Fitness level selection button
               RoundTitleValueButton(
                 title: "Level",
                 value: selectLevel,
                 onPressed: () {
+                  // Show level selection bottom sheet
                   showModalBottomSheet(
                     backgroundColor: Colors.transparent,
                     elevation: 0,
@@ -149,12 +170,13 @@ class _PhysiqueScreenState extends State<PhysiqueScreen> {
                 },
               ),
               const SizedBox(height: 40),
-              // Confirm Detail button: sends selected details to Firestore when pressed.
+              // Confirm details button
               RoundButton(
                 title: "Confirm Detail",
                 isPadding: false,
                 onPressed: () async {
                   try {
+                    // Update user profile in Firestore
                     await FirebaseFirestore.instance
                         .collection('users')
                         .doc(FirebaseAuth.instance.currentUser!.uid)
@@ -165,6 +187,7 @@ class _PhysiqueScreenState extends State<PhysiqueScreen> {
                       'level': selectLevel,
                     });
                   } catch (e) {
+                    // Show error message if update fails
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text("Failed to update details: $e"),
@@ -173,8 +196,7 @@ class _PhysiqueScreenState extends State<PhysiqueScreen> {
                     );
                     return;
                   }
-                  // After a successful update, navigate to TopTabViewScreen.
-                  // (Adjust navigation method as needed.)
+                  // Navigate to main app screen after successful update
                   Navigator.push(
                     context,
                     MaterialPageRoute(
