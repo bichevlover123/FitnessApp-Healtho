@@ -61,6 +61,7 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Image.asset(
           "assets/img/app_logo.png",
           width: MediaQuery.of(context).size.width * 0.65,
+
         ),
       ),
     );

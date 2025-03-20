@@ -653,7 +653,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           SettingRow(
             title: "Age",
-            icon: "assets/img/age.png",
+            icon: "assets/img/Age.png",
             value: _age,
             onPressed: () async {
               final result = await showDialog<String>(
